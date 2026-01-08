@@ -15,16 +15,47 @@ import { DialogClose } from "@radix-ui/react-dialog";
 import { ArrowRight, Loader2 } from "lucide-react";
 import axios from "axios";
 import DoctorAgentCard, { doctorAgent } from "./DoctorAgentCard";
+import SuggestedDoctorCards from "./SuggestedDoctorCards";
+import { AIDoctorAgents } from "@/shared/list";
 function AddNewSessionDialog() {
   const [note, setnote] = useState<string>("");
   const [loading, setLoading] = useState(false);
   const [suggestedDoctor, setSuggestedDoctor] = useState<doctorAgent[]>([]);
+  const [selectedDoctor, setSelectedDoctor] = useState<doctorAgent>();
 
   const onClickNext = async () => {
     setLoading(true);
     const result = await axios.post("api/suggest-doctors", { notes: note });
     console.log("Suggested Doctor: ", result.data);
-    setSuggestedDoctor(result.data);
+    // Normalize response: ensure each doctor has a valid image path.
+    const resp = result.data;
+    const doctorsArray = Array.isArray(resp) ? resp : resp?.data || [];
+    const normalized = (doctorsArray || []).map((d: any) => {
+      // find matching agent from local list by id or specialist
+      const match = AIDoctorAgents.find(
+        (a) => a.id === d.id || a.specialist === d.specialist
+      );
+      const img =
+        d.image && d.image !== "" ? d.image : match?.image || "/file.svg";
+      const specialist = d.specialist || match?.specialist || "Unknown";
+      const description = d.description || match?.description || "";
+      return { ...d, image: img, specialist, description };
+    });
+    setSuggestedDoctor(normalized);
+    setLoading(false);
+  };
+
+  const onStartConsultation = async () => {
+    setLoading(true);
+    const result = await axios.post("/api/session-chat", {
+      notes: note,
+      selectedDoctor: selectedDoctor,
+    });
+    console.log(result.data);
+
+    if (result.data?.sessionId) {
+      console.log(result.data?.sessionId);
+    }
     setLoading(false);
   };
 
@@ -50,20 +81,21 @@ function AddNewSessionDialog() {
             />
           </div>
         ) : (
-          <div className="grid grid-cols-2 gap-5" >
+          <div className="grid grid-cols-3 gap-5">
             {/* Suggested doctors UI */}
             {suggestedDoctor.map((doctor, index) => (
-              <div
+              <SuggestedDoctorCards
                 key={index}
-                className="border border-slate-200 rounded-lg p-4 mb-2"
-              >
-              </div>
+                doctorAgent={doctor}
+                setSelectedDoctor={() => setSelectedDoctor(doctor)}
+                selectedDoctor={selectedDoctor}
+              />
             ))}
           </div>
         )}
 
         <DialogFooter>
-          <DialogClose>
+          <DialogClose asChild>
             <Button variant={"outline"}>Cancel </Button>
           </DialogClose>
           {suggestedDoctor.length === 0 ? (
@@ -76,7 +108,14 @@ function AddNewSessionDialog() {
               )}
             </Button>
           ) : (
-            <Button>Start Consultation</Button>
+            <Button disabled={loading || !selectedDoctor} onClick={() => onStartConsultation()}>
+              Start Consultation
+              {loading ? (
+                <Loader2 className="animate-spin mr-2" />
+              ) : (
+                <ArrowRight className="ml-2" />
+              )}
+            </Button>
           )}
         </DialogFooter>
       </DialogContent>
