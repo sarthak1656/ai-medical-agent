@@ -17,11 +17,13 @@ import axios from "axios";
 import DoctorAgentCard, { doctorAgent } from "./DoctorAgentCard";
 import SuggestedDoctorCards from "./SuggestedDoctorCards";
 import { AIDoctorAgents } from "@/shared/list";
+import { useRouter } from "next/navigation";
 function AddNewSessionDialog() {
   const [note, setnote] = useState<string>("");
   const [loading, setLoading] = useState(false);
   const [suggestedDoctor, setSuggestedDoctor] = useState<doctorAgent[]>([]);
   const [selectedDoctor, setSelectedDoctor] = useState<doctorAgent>();
+  const router = useRouter();
 
   const onClickNext = async () => {
     setLoading(true);
@@ -55,6 +57,7 @@ function AddNewSessionDialog() {
 
     if (result.data?.sessionId) {
       console.log(result.data?.sessionId);
+      router.push(`/dashboard/medical-agent/${result.data?.sessionId}`);
     }
     setLoading(false);
   };
@@ -108,7 +111,10 @@ function AddNewSessionDialog() {
               )}
             </Button>
           ) : (
-            <Button disabled={loading || !selectedDoctor} onClick={() => onStartConsultation()}>
+            <Button
+              disabled={loading || !selectedDoctor}
+              onClick={() => onStartConsultation()}
+            >
               Start Consultation
               {loading ? (
                 <Loader2 className="animate-spin mr-2" />

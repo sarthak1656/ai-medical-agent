@@ -27,7 +27,7 @@ function AppHeader() {
   ];
   return (
     <div className="w-full flex items-center justify-between px-10 md:px-20 lg:px-40  py-4 border-b border-b-gray-300 shadow">
-      <Image src={"./logo.svg"} alt="logo" width={180} height={90} />
+      <Image src={"/logo.svg"} alt="logo" width={180} height={90} />
       <div className="hidden md:flex gap-12 items-center ">
         {menuOptions.map((option) => (
           <div key={option.id}>

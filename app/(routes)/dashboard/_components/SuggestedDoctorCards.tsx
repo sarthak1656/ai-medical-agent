@@ -13,7 +13,7 @@ function SuggestedDoctorCards({
   setSelectedDoctor,
   selectedDoctor,
 }: Props) {
-  const isSelected = selectedDoctor?.id === doctorAgent.id;
+  const isSelected = selectedDoctor?.id === doctorAgent?.id;
 
   return (
     <div
