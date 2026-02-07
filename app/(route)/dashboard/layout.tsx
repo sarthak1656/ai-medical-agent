@@ -1,5 +1,5 @@
-import React from 'react'
-import AppHeader from './_component/AppHeader';
+import React from "react";
+import AppHeader from "./_component/AppHeader";
 
 function DashboardLayout({
   children,
@@ -8,9 +8,10 @@ function DashboardLayout({
 }>) {
   return (
     <div>
-        <AppHeader />
-        {children}</div>
-  )
+      <AppHeader />
+      <div className="px-10 md:px-20 lg:px-40 py-10">{children}</div>
+    </div>
+  );
 }
 
-export default DashboardLayout
+export default DashboardLayout;

@@ -1,9 +1,19 @@
-import React from 'react'
+import React from "react";
+import HistoryList from "./_component/HistoryList";
+import { Button } from "@/components/ui/button";
+import DoctorAgentList from "./_component/DoctorAgentList";
 
-function Workspace() {
+function Dashboard() {
   return (
-    <div>Workspace</div>
-  )
+    <div>
+      <div className="flex items-center justify-between">
+        <h2 className="font-bold text-2xl"> My Dashboard</h2>
+        <Button>+Consult With Doctor</Button>
+      </div>
+      <HistoryList />
+      <DoctorAgentList/>
+    </div>
+  );
 }
 
-export default Workspace
+export default Dashboard;
