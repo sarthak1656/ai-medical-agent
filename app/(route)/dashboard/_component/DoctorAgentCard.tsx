@@ -3,7 +3,7 @@ import Image from "next/image";
 import React from "react";
 import { ArrowRight } from "lucide-react";
 
-type doctorAgent = {
+export type doctorAgent = {
   id: number;
   specialist: string;
   description: string;
