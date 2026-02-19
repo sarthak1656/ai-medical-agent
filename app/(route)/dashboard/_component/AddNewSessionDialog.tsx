@@ -55,7 +55,7 @@ function AddNewSessionDialog() {
 
   return (
     <Dialog>
-      <DialogTrigger>
+      <DialogTrigger asChild>
         <Button className="mt-5">+Start Consultation</Button>
       </DialogTrigger>
       <DialogContent>
@@ -80,7 +80,6 @@ function AddNewSessionDialog() {
                       doctorAgent={doctor}
                       key={doctor.id}
                       setSelecterDoctor={() => setSelectedDoctor(doctor)}
-
                       selectedDoctor={selectedDoctor}
                     />
                   ))}
@@ -90,7 +89,7 @@ function AddNewSessionDialog() {
           </DialogDescription>
         </DialogHeader>
         <DialogFooter>
-          <DialogClose>
+          <DialogClose asChild>
             <Button variant={"outline"}>Cancel</Button>
           </DialogClose>
           {!suggestedDoctors ? (
