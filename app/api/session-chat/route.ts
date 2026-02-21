@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { v4 as uuidv4 } from "uuid";
 import { currentUser } from "@clerk/nextjs/server";
-import { eq } from "drizzle-orm";
+import { desc, eq } from "drizzle-orm";
 
 // Import your database instance and schemas
 import { db } from "@/config/db";
@@ -86,29 +86,52 @@ export async function GET(req: NextRequest) {
 
     // 1. Validation
     if (!sessionId) {
-      return NextResponse.json({ error: "sessionId is required" }, { status: 400 });
+      return NextResponse.json(
+        { error: "sessionId is required" },
+        { status: 400 },
+      );
     }
 
     if (!user || !user.primaryEmailAddress?.emailAddress) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    // 2. Query the Database
-    const result = await db
-      .select()
-      .from(SessionChatTable)
-      .where(eq(SessionChatTable.sessionId, sessionId));
+    if (sessionId === "all") {
+      // 2. Query the Database
+      const result = await db
+        .select()
+        .from(SessionChatTable)
+        .where(
+          eq(
+            SessionChatTable.createdBy,
+            user?.primaryEmailAddress?.emailAddress.toLowerCase(),
+          ),
+        )
+        .orderBy(desc(SessionChatTable.id));
+      return NextResponse.json(result);
+    } else {
+      // 2. Query the Database
+      const result = await db
+        .select()
+        .from(SessionChatTable)
+        .where(eq(SessionChatTable.sessionId, sessionId));
 
-    // 3. Check if session exists
-    if (result.length === 0) {
-      return NextResponse.json({ error: "Session not found" }, { status: 404 });
+      // 3. Check if session exists
+      if (result.length === 0) {
+        return NextResponse.json(
+          { error: "Session not found" },
+          { status: 404 },
+        );
+      }
+
+      // 4. Return data to frontend
+      return NextResponse.json(result[0]);
     }
-
-    // 4. Return data to frontend
-    return NextResponse.json(result[0]);
-
   } catch (error) {
     console.error("GET /api/session-chat error:", error);
-    return NextResponse.json({ error: "Internal Server Error" }, { status: 500 });
+    return NextResponse.json(
+      { error: "Internal Server Error" },
+      { status: 500 },
+    );
   }
 }
