@@ -1,6 +1,6 @@
 "use client";
 import axios from "axios";
-import { useParams } from "next/navigation";
+import { useParams, useRouter } from "next/navigation";
 import React, { useEffect, useState } from "react";
 import { doctorAgent } from "../../_component/DoctorAgentCard";
 import { Circle, Loader2, PhoneCall, PhoneOff } from "lucide-react";
@@ -8,6 +8,7 @@ import Image from "next/image";
 import { Button } from "@/components/ui/button";
 
 import Vapi from "@vapi-ai/web";
+import { toast } from "sonner";
 
 type SessionDetails = {
   id: number;
@@ -32,6 +33,8 @@ function MedicalVoiceAgent() {
   const [liveTranscript, setLiveTranscript] = useState<string>();
   const [messages, setMessages] = useState<messages[]>([]);
   const [loading, setLoading] = useState(false);
+
+  const router = useRouter();
 
   useEffect(() => {
     sessionId && GetSessionDetails();
@@ -200,6 +203,9 @@ const dynamicSystemPrompt = `
     const result = await GenerateReport();
     console.log(result);
     setLoading(false);
+    toast.success("Report Generated Successfully!");
+
+    router.replace("/dashboard")
   };
 
   const GenerateReport = async () => {
