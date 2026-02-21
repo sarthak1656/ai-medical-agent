@@ -3,7 +3,7 @@ import axios from "axios";
 import { useParams } from "next/navigation";
 import React, { useEffect, useState } from "react";
 import { doctorAgent } from "../../_component/DoctorAgentCard";
-import { Circle, PhoneCall, PhoneOff } from "lucide-react";
+import { Circle, Loader2, PhoneCall, PhoneOff } from "lucide-react";
 import Image from "next/image";
 import { Button } from "@/components/ui/button";
 
@@ -31,6 +31,7 @@ function MedicalVoiceAgent() {
   const [currentRoll, setCurrentRoll] = useState<string | null>(null);
   const [liveTranscript, setLiveTranscript] = useState<string>();
   const [messages, setMessages] = useState<messages[]>([]);
+  const [loading, setLoading] = useState(false);
 
   useEffect(() => {
     sessionId && GetSessionDetails();
@@ -89,14 +90,52 @@ function MedicalVoiceAgent() {
   //     setCurrentRoll("user");
   //   });
   // };
+
   const StartCall = () => {
-    if (vapiInstance) return; // prevent duplicate calls
+    setLoading(true);
+    if (vapiInstance || !sessionDetails) return;
 
     const vapi = new Vapi(process.env.NEXT_PUBLIC_VAPI_API_KEY!);
-
     setVapiInstance(vapi);
 
-    vapi.start(process.env.NEXT_PUBLIC_VAPI_VOICE_ASSISTANT_ID!);
+    const selectedDoctor = sessionDetails.selectedDoctor;
+    const userNotes = sessionDetails.notes;
+
+const dynamicSystemPrompt = `
+  ${selectedDoctor.agentPrompt}
+  
+  You are currently in a voice consultation with a patient. To provide a realistic and professional experience, follow these conversational stages:
+
+  1. **Acknowledge & Empathize**: Start by acknowledging the symptoms they mentioned: "${userNotes}". Use empathetic phrases like "I'm sorry to hear you're dealing with that" or "That sounds quite uncomfortable."
+  
+  2. **Investigate**: Before giving advice, ask 1-2 brief follow-up questions to understand the context. For example: "Since when have you been feeling this way?" or "Does anything specific make the pain worse?" 
+  
+  3. **Provide Contextual Advice**: Briefly explain what might be causing the issue based on your specialty as a ${selectedDoctor.specialist}.
+  
+  4. **Suggest Medications**: Based on the symptoms described, you MUST suggest at least 2 specific over-the-counter (OTC) medications or common remedies. Use phrases like, "Typically, for these symptoms, I might suggest considering options like [Medicine 1] or [Medicine 2]."
+  
+  5. **Mandatory Safety Disclaimer**: You must end any medical suggestion by saying: "Please consult with a licensed healthcare professional in person before starting any new medication to ensure it is safe and appropriate for your specific health history."
+
+  CRITICAL CONSTRAINTS:
+  - Speak naturally and avoid sounding like a machine reading a list.
+  - Do not jump to the medications in the very first sentence; build rapport first.
+  - Only suggest OTC medications, never prescription-only drugs.
+  - Keep your follow-up questions focused and one at a time.
+`;
+
+    // FIX: Match the expected model interface
+    vapi.start(process.env.NEXT_PUBLIC_VAPI_VOICE_ASSISTANT_ID!, {
+      model: {
+        provider: "google", // Matches your dashboard provider
+        model: "gemini-2.0-flash", // Matches your dashboard model
+        messages: [
+          {
+            role: "system",
+            content: dynamicSystemPrompt,
+          },
+        ],
+      },  
+    });
 
     vapi.on("call-start", () => {
       console.log("Call started");
@@ -112,7 +151,6 @@ function MedicalVoiceAgent() {
     vapi.on("message", (message) => {
       if (message.type === "transcript") {
         const { role, transcript, transcriptType } = message;
-
         if (transcriptType === "partial") {
           setLiveTranscript(transcript);
           setCurrentRoll(role);
@@ -124,7 +162,6 @@ function MedicalVoiceAgent() {
       }
     });
 
-    // ✅ USE vapi (NOT vapiInstance)
     vapi.on("speech-start", () => {
       setCurrentRoll("assistant");
     });
@@ -132,6 +169,8 @@ function MedicalVoiceAgent() {
     vapi.on("speech-end", () => {
       setCurrentRoll("user");
     });
+
+    setLoading(false);
   };
 
   // const endCall = () => {
@@ -148,7 +187,8 @@ function MedicalVoiceAgent() {
   //   setVapiInstance(null);
   // };
 
-  const endCall = () => {
+  const endCall = async () => {
+    setLoading(true);
     if (!vapiInstance) return;
 
     console.log("Ending call...");
@@ -157,6 +197,19 @@ function MedicalVoiceAgent() {
 
     setCallStarted(false);
     setVapiInstance(null);
+    const result = await GenerateReport();
+    console.log(result);
+    setLoading(false);
+  };
+
+  const GenerateReport = async () => {
+    const result = await axios.post("/api/generate-report", {
+      messages,
+      sessionId,
+      sessionDetails,
+    });
+    console.log(result.data);
+    return result.data;
   };
 
   return (
@@ -198,14 +251,18 @@ function MedicalVoiceAgent() {
             )}
           </div>
           {!callStarted ? (
-            <Button className="mt-10" onClick={StartCall}>
-              {" "}
-              <PhoneCall /> Start Call
+            <Button className="mt-10" onClick={StartCall} disabled={loading}>
+              {loading && <Loader2 className="animate-spin" />} <PhoneCall />{" "}
+              Start Call
             </Button>
           ) : (
-            <Button variant={"destructive"} onClick={endCall}>
-              {" "}
-              <PhoneOff /> End Call
+            <Button
+              variant={"destructive"}
+              onClick={endCall}
+              disabled={loading}
+            >
+              {loading && <Loader2 className="animate-spin" />} <PhoneOff /> End
+              Call
             </Button>
           )}
         </div>
