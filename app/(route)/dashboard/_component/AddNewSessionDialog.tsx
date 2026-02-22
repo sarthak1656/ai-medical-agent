@@ -33,7 +33,7 @@ function AddNewSessionDialog() {
     const result = await axios.post("/api/suggest-doctors", {
       notes: note,
     });
-    console.log(result.data);
+    // console.log(result.data);
     setSuggestedDoctors(result.data);
     setLoading(false);
   };
@@ -44,10 +44,10 @@ function AddNewSessionDialog() {
       notes: note,
       selectedDoctor: selectedDoctor,
     });
-    console.log(result.data);
+    // console.log(result.data);
 
     if (result.data?.sessionId) {
-      console.log(result.data?.sessionId);
+      // console.log(result.data?.sessionId);
       route.push(`/dashboard/medical-agent/${result.data?.sessionId}`);
     }
     setLoading(false);

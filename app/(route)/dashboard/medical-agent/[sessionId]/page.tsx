@@ -141,12 +141,12 @@ const dynamicSystemPrompt = `
     });
 
     vapi.on("call-start", () => {
-      console.log("Call started");
+      // console.log("Call started");
       setCallStarted(true);
     });
 
     vapi.on("call-end", () => {
-      console.log("Call ended");
+      // console.log("Call ended");
       setCallStarted(false);
       setVapiInstance(null);
     });
@@ -194,14 +194,14 @@ const dynamicSystemPrompt = `
     setLoading(true);
     if (!vapiInstance) return;
 
-    console.log("Ending call...");
+    // console.log("Ending call...");
 
     vapiInstance.stop();
 
     setCallStarted(false);
     setVapiInstance(null);
     const result = await GenerateReport();
-    console.log(result);
+    // console.log(result);
     setLoading(false);
     toast.success("Report Generated Successfully!");
 
@@ -214,7 +214,7 @@ const dynamicSystemPrompt = `
       sessionId,
       sessionDetails,
     });
-    console.log(result.data);
+    // console.log(result.data);
     return result.data;
   };
 
