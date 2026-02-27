@@ -104,7 +104,7 @@ function MedicalVoiceAgent() {
     const selectedDoctor = sessionDetails.selectedDoctor;
     const userNotes = sessionDetails.notes;
 
-const dynamicSystemPrompt = `
+    const dynamicSystemPrompt = `
   ${selectedDoctor.agentPrompt}
   
   You are currently in a voice consultation with a patient. To provide a realistic and professional experience, follow these conversational stages:
@@ -137,7 +137,7 @@ const dynamicSystemPrompt = `
             content: dynamicSystemPrompt,
           },
         ],
-      },  
+      },
     });
 
     vapi.on("call-start", () => {
@@ -190,22 +190,42 @@ const dynamicSystemPrompt = `
   //   setVapiInstance(null);
   // };
 
-  const endCall = async () => {
+const endCall = async () => {
     setLoading(true);
-    if (!vapiInstance) return;
+    
+    // Check if the instance exists before attempting to stop
+    if (vapiInstance) {
+      try {
+        // Stop the voice session
+        vapiInstance.stop();
+        
+        // Remove listeners to prevent "Meeting ended" or cleanup errors 
+        // from triggering state updates after the component is transitioning
+        vapiInstance.removeAllListeners();
+      } catch (error) {
+        console.error("Error during vapi cleanup:", error);
+      }
+    }
 
-    // console.log("Ending call...");
-
-    vapiInstance.stop();
-
+    // Immediately update UI state so the user doesn't feel a delay
     setCallStarted(false);
     setVapiInstance(null);
-    const result = await GenerateReport();
-    // console.log(result);
-    setLoading(false);
-    toast.success("Report Generated Successfully!");
 
-    router.replace("/dashboard")
+    try {
+      // Generate the medical report in the background
+      await GenerateReport();
+      
+      toast.success("Consultation ended. Report generated successfully!");
+      
+      // Navigate back to the dashboard
+      router.replace("/dashboard");
+    } catch (error) {
+      console.error("Report generation failed:", error);
+      toast.error("Call ended, but there was an issue generating the report.");
+      router.replace("/dashboard");
+    } finally {
+      setLoading(false);
+    }
   };
 
   const GenerateReport = async () => {
@@ -257,18 +277,24 @@ const dynamicSystemPrompt = `
             )}
           </div>
           {!callStarted ? (
-            <Button className="mt-10" onClick={StartCall} disabled={loading}>
-              {loading && <Loader2 className="animate-spin" />} <PhoneCall />{" "}
-              Start Call
+            <Button 
+              className="mt-10 cursor-pointer"
+              onClick={StartCall}
+              // This button will be disabled if loading is true OR if the call has already started
+              disabled={loading || callStarted}
+            >
+              {loading && <Loader2 className="animate-spin" />}
+              <PhoneCall /> Start Call
             </Button>
           ) : (
             <Button
               variant={"destructive"}
               onClick={endCall}
+              // This button will be disabled during the end-call/report-generation phase
               disabled={loading}
             >
-              {loading && <Loader2 className="animate-spin" />} <PhoneOff /> End
-              Call
+              {loading && <Loader2 className="animate-spin" />}
+              <PhoneOff /> End Call
             </Button>
           )}
         </div>
